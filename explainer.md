@@ -131,6 +131,42 @@ function OnDrawFrame(time) {
 
 To stop presenting to the `VRDisplay`, the page must call the [`VRDisplay.exitPresent`](https://w3c.github.io/webvr/#dom-vrdisplay-exitpresent) method.
 
+## Additional scenarios
+
+A few potential application uses are described here to demonstrate more specialized API uses.
+
+### 360 Photo or Video viewer
+
+A viewer for 360 photos or videos should not respond to head translation, since the source material is intended to be viewed from a single point. While some headsets naturally function this way (Daydream, Gear VR, Cardboard) it can be useful for app developers to specify that they don't want any translation component in the matrices they receive. (This may also provide power savings on some devices, since it may allow some sensors to be turned off.) That can be accomplished by providing an option to the `VRRelativeFrameOfReference` constructor.
+
+```js
+let frameOfRef = new VRRelativeFrameOfReference(vrDisplay, {requestPosition: false});
+
+// Use frameOfRef as detailed above.
+```
+
+### Room-scale application
+
+Some VR displays have knowledge about the room they are being used in, including things like where the floor is and what boundaries of the safe space is so that it can be communicated to the user in VR. It can be beneficial to render the virtual scene so that it lines up with the users physical space for added immersion, especially ensuring that the virtual floor and the physical floor align. This is frequently called "room scale" or "standing" VR. It helps the user feel grounded in the virtual space. WebVR applications can take advantage of that space by using a `VRRoomFrameOfReference`, which will report values relative to the floor, ideally at the center of the room. (In other words the users physical floor is at Y = 0.) Not all `VRDisplays` will support this mode, however, so it's availability should be checked before hand.
+
+```js
+let frameOfRef = null;
+
+// Check to ensure the desired VRFrameOfReference is supported.
+if (vrDisplay.getSupportedFramesOfReference().includes("VRRoomFrameOfReference")) {
+  // This constructor will throw if this frame of reference is not supported by vrDisplay.
+  frameOfRef = new VRRoomFrameOfReference(vrDisplay);
+} else {
+  // In this case the application will want to estimate the position of the
+  // floor, perhaps by asking the user's height, and translate the reported
+  // values upward by that distance so that the floor appears in approximately
+  // the correect position.
+  frameOfRef = new VRRelativeFrameOfReference(vrDisplay);
+}
+
+// Use frameOfRef as detailed above, but render the floor of the virtual space at Y = 0;
+```
+
 ### More sample code
 This overview attempts to touch on all the important parts of using WebVR but, for the sake of clarity, avoids discussing advanced uses. For developers who want to dig a bit deeper, there are several working samples of the API in action at https://webvr.info/samples/. These samples each outline a specific part of the API with plenty of code comments to help guide developers through what everything is doing.
 
